@@ -9,13 +9,17 @@
 ;;mem3 stuck?
 ;;mem 4 number
 ;;mem 5 target?
-globals[total]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;base mem0:Total of unity number
+;;mem1: size of circle crop
+;;
+
 ;Ask close rocket launcher to get in circle around target
 to come_circle_this [ t radius numberTotal currentTotal general ]
   ;Si on est pas en train de faire quelque chose
   if ( mem5 = 0 and breed = 2 )
   [
-    let posX ( radius * cos(360 * currentTotal / numberTotal) + [xcor] of t )
+    let posX ( radius * cos(360 * currentTotal / numberTotal)  + [xcor] of t )
     let posY ( radius * sin(360 * currentTotal / numberTotal) + [ycor] of t )
     set mem0 posX 
     set mem1 posY
@@ -30,8 +34,8 @@ to come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general ]
   ;;if ( mem5 = 0);; and breed = 2 )
   ;;[
    ; show radius
-    let posX ( radius * cos(360 * currentTotal / numberTotal) + aimX )
-    let posY ( radius * sin(360 * currentTotal / numberTotal) + aimY )
+    let posX ( radius * cos(360 * (currentTotal / numberTotal) + (ticks mod 360)) + aimX )
+    let posY ( radius * sin(360 * (currentTotal / numberTotal) + (ticks mod 360)) + aimY )
     ;show posX
     ;show posY
     set mem0 posX 
@@ -290,10 +294,10 @@ end
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
-  ;;red-team-go-back-to-base-cardinal
+  red-team-go-back-to-base-cardinal
   ;; cherche à manger
-  ;;red-team-harvesters-go-and-eat
-  come_circle_thisxy 30 0 10 15 mem4 nobody 
+  red-team-harvesters-go-and-eat
+  ;;come_circle_thisxy 30 0 10 15 mem4 nobody 
 
 end
 
@@ -316,13 +320,15 @@ end
 ;; procedure pour initialiser les rocket-launchers rouges
 to initRedRocketLauncher
 end
-
+to increment-total
+  set mem0 (mem0 + 1)
+end
 ;; procedure pour initialiser les harvesters rouges
 to initRedHarvester
   set mem2 10;
-   show total
-  set mem4 total + 1
-  set total (total + 1) 
+  let b min-one-of my-bases [distance self] 
+  set mem4 [ mem0 + 1 ] of b
+  ask b [increment-total]  
   carefully[
   if( ticks > 3000)[ set mem0 xcor - 40
  set mem1 ycor 
@@ -336,7 +342,8 @@ end
 
 ;; procedure pour initialiser les bases rouges
 to initRedBase
-  set total 0
+  set mem0 0
+  set mem1 10
     ;;new-Explorer 2 self
   new-Harvester 7 self
   ;;new-RocketLauncher 2 self
