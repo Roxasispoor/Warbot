@@ -4,16 +4,35 @@
 ;; préfixe : red-team
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;mem0-1 target direction
+;; mem2 size defense
+;;mem3 stuck?
 
 ;Ask close rocket launcher to get in circle around target
-to come_circle_this [ aimX aimY radius numberTotal currentTotal general ]
+to come_circle_this [ t radius numberTotal currentTotal general ]
   ;Si on est pas en train de faire quelque chose
   if ( mem5 = 0 and breed = 2 )
   [
-  let posX (radius * cos(2 * pi * currentTotal / numberTotal) + aimX )
-  let posY (radius * sin(2 * pi * currentTotal / numberTotal) + aimY )
-   set mem0 posX 
-   set mem1 posY
+    let posX (radius * cos(2 * pi * currentTotal / numberTotal) + [xcor] of t )
+    let posY (radius * sin(2 * pi * currentTotal / numberTotal) + [ycor] of t )
+    set mem0 posX 
+    set mem1 posY
+    set mem5 1
+    move-to-target
+    
+  ]
+ 
+end
+to come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general ]
+  ;Si on est pas en train de faire quelque chose
+  if ( mem5 = 0 and breed = 2 )
+  [
+    let posX (radius * cos(2 * pi * currentTotal / numberTotal) + aimX )
+    let posY (radius * sin(2 * pi * currentTotal / numberTotal) + aimY )
+    set mem0 posX 
+    set mem1 posY
+    set mem5 1
+    move-to-target
     
   ]
  
@@ -33,9 +52,75 @@ end
 to red-team-ask-for-energy [ b n ]
   ask b [ if (energy > 6000) [ give-energy myself n ]]
 end
+to red-team-go-back-to-base-cardinal
+ 
+  if ( carrying-food? > 2000 or energy < 500 )
+  [
+   
+    let b min-one-of my-bases [ distance myself ]
+    ifelse (b != nobody and mem3 = 0) [
+      ifelse (distance b <= 2)
+      [ 
+        if (carrying-food? > 1000) [ give-food b carrying-food? ]
+        if (energy < 500) [ red-team-ask-for-energy b 500 ]
+        if ((Breed = RocketLaunchers) and (nb-missiles = 0)) [
+          red-team-ask-for-energy b 500
+          new-missile 5
+        ]
+      ]
+      [
+      ;;si on est a l'intérieur
+;;      if(distance b < mem2)
+  ;;    [  set heading towards b - 20 + random 40
+    ;;    ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]
+     ;; ]
+      ifelse(abs(xcor - [xcor] of b) < abs(ycor - [ycor] of b))
+        ;;On s'approche par l'axe x
+        [
+          if(xcor > [xcor] of b + 0.5 )
+         [ ;;xcor plus grand, on descent
+          set heading 270
+          ]
+          if(xcor < [xcor] of b - 0.5 )
+         [ ;;xcor plus petit, on monte
+          set heading 90
+          ]
+          if(xcor < [xcor] of b + 0.5 and xcor > [xcor] of b - 0.5 )
+         [ ;;xcor egal, on va vers
+          
+          set heading towards b
+          ]
+          
+          ]
+        ;;On s'approche par l'axe y
+        [
+          if(ycor > [ycor] of b + 0.5)
+         [ ;;ycor plus grand, on va a gauche
+          set heading 180
+          ]
+          if(ycor < [ycor] of b - 0.5 )
+         [ ;;ycor plus petit, on monte
+          set heading 0
+          ]
+         if(ycor < [ycor] of b + 0.5 and ycor > [ycor] of b - 0.5 )
+         [ ;;ycor egal, on va vers
+          set heading towards b
+         
+          ]
+          
+        ]
+        ifelse (free-ahead? speed = nobody) [ forward-move speed
+          set mem3 0 ][ rt 90 ifelse (free-ahead? 2 = nobody) [ forward-move speed ] [set mem3 ticks ] ]
+      ]
+    ]
+   [ red-team-go-back-to-base
+    ]    
+  ]
+
+end
 
 to red-team-go-back-to-base
-  if (carrying-food? > 2000) or (energy < 500) or ((Breed = RocketLaunchers) and (nb-missiles = 0))
+  if (carrying-food? > 2000 or (energy < 500))
   [
     let b min-one-of my-bases [ distance myself ]
     if (b != nobody) [
@@ -47,10 +132,16 @@ to red-team-go-back-to-base
           red-team-ask-for-energy b 500
           new-missile 5
         ]
+        ;;On est arrivé, on est pas stuck
+      set mem3 0
       ]
       [
         set heading towards b - 20 + random 40
         ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+      ;;On est probablement débloqué en 50 ticks
+        if(ticks - mem3 > 50 )
+        [ set mem3 0
+        ]
       ]
     ]    
   ]
@@ -63,7 +154,13 @@ to red-team-go-and-eat
 end
 ;;Try to eat, if doesn't succeeed go to target
 to burger-collector-harvesters
-    let b min-one-of perceive-food [ distance self ]
+
+  
+  
+;  let b min-one-of perceive-base ennemy1 [distance myself]
+ ; let b min-one-of perceive-robots2 ennemy1 ennemy2 [ distance myself ]
+  circle-base-with-stone
+  let b min-one-of perceive-food [ distance myself ]
   if (b != nobody) [ 
     ifelse (distance b) <= 2
       [ take b ]
@@ -74,6 +171,34 @@ to burger-collector-harvesters
   
   ifelse( mem5 = 1)[ move-to-target ][ random-move ]
 end
+to circle-base-with-stone
+  let closestBase min-one-of my-bases [ distance myself] 
+  
+  let c min-one-of perceive-walls [ distance myself ]
+  if (c != nobody and closestBase != nobody)[
+  let distBaseWall [distance c] of closestBase
+  ;;on prend a l'intérieur du cercle , a l'extérieur, et au points cardinaux
+  if(carrying-wall? = 0 and distBaseWall > 11 or distBaseWall < 9
+     or (xcor <= [xcor + 1] of closestBase and xcor >= [xcor - 1] of closestBase ) 
+    or (ycor <= [ycor + 1] of closestBase and ycor >= [ycor - 1] of closestBase ) ) [ 
+    ifelse (distance c) <= 2
+      [ take-wall c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+  ]
+  ;;Disposition en cercle évidé
+  if( closestBase != nobody and carrying-wall? = 1 and distance closestBase > 9 and distance closestBase < 11 
+    and (xcor >= [xcor + 1] of closestBase or xcor <= [xcor - 1] of closestBase ) 
+    and (ycor >= [ycor + 1] of closestBase or ycor <= [ycor - 1] of closestBase ))
+  [
+    drop-wall
+  ]
+end
+
 to red-team-harvesters-go-and-eat
   burger-collector-harvesters
   
@@ -155,7 +280,7 @@ end
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
-  red-team-go-back-to-base
+  red-team-go-back-to-base-cardinal
   ;; cherche à manger
   red-team-harvesters-go-and-eat
 end
@@ -182,10 +307,12 @@ end
 
 ;; procedure pour initialiser les rocket-launchers rouges
 to initRedHarvester
+  set mem2 10;
   carefully[
   if( ticks > 3000)[ set mem0 xcor - 40
  set mem1 ycor 
-set mem5 1  ]
+set mem5 1
+  set mem3 0  ]
   ][;;die silently
   ]
 end
