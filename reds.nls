@@ -13,7 +13,9 @@
 ;;base mem0:Total of unity number
 ;;mem1: size of circle crop
 ;;
-
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Explorer stomper
+;; mem2 next base to destroy
 ;Ask close rocket launcher to get in circle around target
 to come_circle_this [ t radius numberTotal currentTotal general ]
   ;Si on est pas en train de faire quelque chose
@@ -34,8 +36,8 @@ to come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general ]
   ;;if ( mem5 = 0);; and breed = 2 )
   ;;[
    ; show radius
-    let posX ( radius * cos(360 * (currentTotal / numberTotal) + (ticks mod 360)) + aimX )
-    let posY ( radius * sin(360 * (currentTotal / numberTotal) + (ticks mod 360)) + aimY )
+    let posX ( radius * cos(360 * (currentTotal / numberTotal) + 360 * ((ticks mod 500) / 500) ) + aimX )
+    let posY ( radius * sin(360 * (currentTotal / numberTotal) + 360 * ((ticks mod 500) / 500) ) + aimY )
     ;show posX
     ;show posY
     set mem0 posX 
@@ -272,15 +274,16 @@ end
 
 to goRedExplorer
   red-team-go-back-to-base
-  red-team-go-and-eat
+  stomp-ennemy-fields
+  ;;  red-team-go-and-eat
 
-  ifelse (not red-team-no-target?) [
-    red-team-call-rocket-launcher mem0 mem1 mem2
-    red-team-call-explorer mem0 mem1 mem2
-  ]
-  [ let h one-of perceive-robots2 ennemy1 ennemy2
-    if ( h != nobody ) [ red-team-call-rocket-launcher [xcor] of h [ycor] of h [breed] of h]
-  ]
+  ;;ifelse (not red-team-no-target?) [
+    ;;red-team-call-rocket-launcher mem0 mem1 mem2
+    ;red-team-call-explorer mem0 mem1 mem2
+  ;]
+  ;[ let h one-of perceive-robots2 ennemy1 ennemy2
+   ; if ( h != nobody ) [ red-team-call-rocket-launcher [xcor] of h [ycor] of h [breed] of h]
+  ;]
 end
 
 to goRedRocketLauncher
@@ -291,13 +294,56 @@ to goRedRocketLauncher
 
   if ((energy > 3000) and (nb-missiles < 5)) [ new-missile 1 ]
 end
+to stomp-ennemy-fields
+  
+  let t min-one-of perceive-seeds ennemy1 [distance myself]
+  if(t != nobody)
+  [
+  set heading towards t  - 20 + random 40
+  ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+  ]
+  set t min-one-of perceive-seeds ennemy2 [distance myself]
+  if(t != nobody)
+  [
+  set heading towards t  - 20 + random 40
+  ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+  ]
+  
+      move-to-target
+  
+end
+;;Mouvement carré droite up left down. A lancer depuis un pose bas
+ to make-square-base
+  set mem3 ((mem3 + 1) mod 4)
+  set mem5 1
+  if(mem3 = 0) ;; droite up left down
+    [
+     set mem0 mem0 + 40
+      ]
+      if(mem3 = 1) ;; droite up left down
+      [
+       set mem1 mem1 + 20
+      ]
+      if(mem3 = 2) ;; droite up left down
+      [
+        set mem0 mem0 - 40
+      ]
+      if(mem3 = 3) ;; droite up left down
+      [
+        set mem1 mem1 - 20
+      ]
+
+end
+    
+
+  
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
-  red-team-go-back-to-base-cardinal
+  ;;red-team-go-back-to-base-cardinal
   ;; cherche à manger
-  red-team-harvesters-go-and-eat
-  ;;come_circle_thisxy 30 0 10 15 mem4 nobody 
+ ;; red-team-harvesters-go-and-eat
+  come_circle_thisxy -40 10 10 25 mem4 nobody 
 
 end
 
@@ -315,6 +361,10 @@ end
 
 ;; procedure pour initialiser les explorers rouges
 to initRedExplorer
+  set mem0 (xcor - 40)
+  set mem1 ycor
+  set mem3 3
+  set mem5 1
 end
 
 ;; procedure pour initialiser les rocket-launchers rouges
@@ -344,7 +394,7 @@ end
 to initRedBase
   set mem0 0
   set mem1 10
-    ;;new-Explorer 2 self
+  new-Explorer 1 self
   new-Harvester 7 self
   ;;new-RocketLauncher 2 self
 end
