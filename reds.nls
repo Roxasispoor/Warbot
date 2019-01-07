@@ -77,7 +77,7 @@ to red-team-go-back-to-base-cardinal
     ifelse (b != nobody and mem3 = 0) [
       ifelse (distance b <= 2)
       [ 
-        if (carrying-food? > 1000) [ give-food b carrying-food? ]
+        if (carrying-food? > 2000) [ give-food b carrying-food? ]
         if (energy < 500) [ red-team-ask-for-energy b 500 ]
         if ((Breed = RocketLaunchers) and (nb-missiles = 0)) [
           red-team-ask-for-energy b 500
@@ -262,7 +262,21 @@ to burger-collector-harvesters
         ]
   ]
   
-  ifelse( mem5 = 1)[ move-to-target ][ random-move ]
+  ifelse( mem5 = 1)[ move-to-target ]
+  [ 
+    ifelse(mem4 = 0) ;;Je suis un farmer, je reste dans la base
+    [ let closestBase min-one-of my-bases [ distance myself] 
+      let distbase distance closestBase 
+      ifelse (distBase > mem2 );;Si on s'est trop éloingé de la base on essaie de rentrer un peu
+    [ set heading towards closestBase - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+    [ random-move
+      ]
+      
+    ]
+    [random-move];;Sinon move aléatoire
+    ]
 end
 to circle-base-with-stone
   let closestBase min-one-of my-bases [ distance myself] 
@@ -419,20 +433,24 @@ end
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
-  ;;red-team-go-back-to-base-cardinal
+  red-team-go-back-to-base-cardinal
   ;; cherche à manger
-  ;;red-team-harvesters-go-and-eat
+  red-team-harvesters-go-and-eat
  
  
  ;; come_circle_thisxy -40 10 10 25 mem4 nobody 
-  harbringer
-  ifelse(mem5 = 0)
+  if(mem4 = 2 )
+  
+  ;;harbringer
+  [
+    ifelse(mem5 = 0)
   [
   random-move
   ]
   [
     move-to-target
     harbringer
+  ]
   ]
 end
 
@@ -458,6 +476,9 @@ end
 
 ;; procedure pour initialiser les rocket-launchers rouges
 to initRedRocketLauncher
+  let b min-one-of my-bases [distance self] 
+   set mem4 [ mem0 + 1 ] of b
+  ask b [increment-total]  
 end
 to increment-total
   set mem0 (mem0 + 1)
@@ -466,8 +487,11 @@ end
 to initRedHarvester
   set mem2 10;
   let b min-one-of my-bases [distance self] 
-  set mem4 [ mem0 + 1 ] of b
-  ask b [increment-total]  
+  set mem4 0 ;; TODO MODIFY TO CREATE BREED
+  
+  ;============Harbinger mode=================
+  if(mem4 = 2)
+  [
   let r random 2
   ifelse(r = 1)
   [
@@ -479,7 +503,8 @@ to initRedHarvester
   set mem1 ycor 
   set mem5 1
   set mem3 0
-  
+  ]
+;;==========================================  
   carefully[
   if( ticks > 3000)[ set mem0 xcor - 40
  set mem1 ycor 
