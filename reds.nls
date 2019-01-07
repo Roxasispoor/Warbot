@@ -24,11 +24,15 @@
 ;;mem2: seeker number
 ;;mem3: farmer number
 ;;mem4: harbinger?
+;;mem5 base to destroy
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Explorer stomper
 ;; mem2 next base to destroy
 ;Ask close rocket launcher to get in circle around target
-to come_circle_this [ t radius numberTotal currentTotal general ]
+;ROCKET LAUNCHER
+;;mem2 baseX
+;;mem 3  base y
+to reaper-come_circle_this [ t radius numberTotal currentTotal general ]
   ;Si on est pas en train de faire quelque chose
   if ( mem5 = 0 and breed = 2 )
   [
@@ -37,29 +41,29 @@ to come_circle_this [ t radius numberTotal currentTotal general ]
     set mem0 posX 
     set mem1 posY
     set mem5 1
-    move-to-target-and-stay
+    reaper-move-to-target-and-stay
     
   ]
  
 end
-to come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general ]
+to reaper-come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general ]
   ;Si on est pas en train de faire quelque chose
   ;;if ( mem5 = 0);; and breed = 2 )
   ;;[
-   ; show radius
+   ; ;; show  radius
     let posX ( radius * cos(360 * (currentTotal / numberTotal) + 360 * ((ticks mod 500) / 500) ) + aimX )
     let posY ( radius * sin(360 * (currentTotal / numberTotal) + 360 * ((ticks mod 500) / 500) ) + aimY )
-    ;show posX
-    ;show posY
+    ;;; show  posX
+    ;;; show  posY
     set mem0 posX 
     set mem1 posY
     set mem5 1
-    move-to-target-and-stay
+    reaper-move-to-target-and-stay
     
   ;;]
  
 end
-to move-to-target  
+to reaper-move-to-target  
   if (distancexy mem0 mem1 < 1 )
   [
     set mem5 0
@@ -69,17 +73,24 @@ set heading towardsxy mem0 mem1
         
         
 end
-to move-to-target-and-stay
+to reaper-move-to-target-and-stay
 
   set heading towardsxy mem0 mem1
        ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
-        
+        if(Breed = (RocketLaunchers) and  (distancexy mem0 mem1 < 1 ))
+         [ 
+      if ( nb-missiles = 0)
+      [
+        new-missile 1
+      ] 
+      launch-rocket towardsxy mem2 mem3
+  ] 
 end
 
-to red-team-ask-for-energy [ b n ]
+to reaper-ask-for-energy [ b n ]
   ask b [ if (energy > 6000) [ give-energy myself n ]]
 end
-to red-team-go-back-to-base-cardinal
+to reaper-go-back-to-base-cardinal
  
   if ( carrying-food? > 2000 or energy < 500 )
   [
@@ -89,9 +100,9 @@ to red-team-go-back-to-base-cardinal
       ifelse (distance b <= 2)
       [ 
         if (carrying-food? > 2000) [ give-food b (carrying-food? / 2) ]
-        if (energy < 500) [ red-team-ask-for-energy b 500 ]
+        if (energy < 500) [ reaper-ask-for-energy b 500 ]
         if ((Breed = RocketLaunchers) and (nb-missiles = 0)) [
-          red-team-ask-for-energy b 500
+          reaper-ask-for-energy b 500
           new-missile 5
         ]
       ]
@@ -140,13 +151,13 @@ to red-team-go-back-to-base-cardinal
           set mem3 0 ][ rt 90 ifelse (free-ahead? 2 = nobody) [ forward-move speed ] [set mem3 ticks ] ]
       ]
     ]
-   [ red-team-go-back-to-base
+   [ reaper-go-back-to-base
     ]    
   ]
 
 end
 
-to red-team-go-back-to-base
+to reaper-go-back-to-base
   if (carrying-food? > 2000 or (energy < 500))
   [
     let b min-one-of my-bases [ distance myself ]
@@ -154,9 +165,9 @@ to red-team-go-back-to-base
       ifelse (distance b <= 2)
       [ 
         if (carrying-food? > 1000) [ give-food b carrying-food? ]
-        if (energy < 500) [ red-team-ask-for-energy b 500 ]
+        if (energy < 500) [ reaper-ask-for-energy b 500 ]
         if ((Breed = RocketLaunchers) and (nb-missiles = 0)) [
-          red-team-ask-for-energy b 500
+          reaper-ask-for-energy b 500
           new-missile 5
         ]
         ;;On est arrivé, on est pas stuck
@@ -178,7 +189,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lets plant a seed and harvest a big biggy burger with steak, sald, two portions of cheese and a little gherkin. But just one gherkin.
 to reaper-seeker-harvester
-  circle-base-with-stone
+  reaper-circle-base-with-stone
   let b min-one-of perceive-food [ distance myself ]
   let ba min-one-of my-bases [ distance myself ]
   ;; si tu as de la bouffe à côté de toi : eat all burgers
@@ -196,20 +207,25 @@ to reaper-seeker-harvester
     [set mem3 (mem3 + 1)
       reaper-move-randomly-within-base-range]
     [set mem3 (0)
-    ;get-out
+    ;reaper-get-out
     ]
-    
+     if(mem3 > 1000) ;On se transforme en farmer
+    [
+      set mem4 0
+      ;; show  "transformation"
+    ]
     if(mem3 > 400)
     [
       
-      red-team-go-back-to-base
+      reaper-go-back-to-base
       if(distance ba < 2)
       [
-        show "grandit stp"
+        ;; show  "grandit stp"
         ask ba [reaper-augment-range]
         set mem3 0
       ]
     ]
+   
     
         ;; si le robot est à moins de 10 de la base
         if ((distance ba < mem2) and ( ycor < [ycor] of ba - 0.5 OR
@@ -220,10 +236,10 @@ to reaper-seeker-harvester
       
     
     ;; si non cherche co****** et reviens quand tu auras quelquechose à proposer
-    ifelse( mem5 = 1)[ move-to-target ][ random-move ]
+    ifelse( mem5 = 1)[ reaper-move-to-target ][ random-move ]
   ]
 end
-to get-out
+to reaper-get-out
   let ba min-one-of my-bases [ distance myself ]
   
   ifelse( ycor > [ycor] of ba + 0.5)
@@ -249,7 +265,7 @@ to get-out
   [   set mem0 ([xcor] of ba + mem2) 
     set mem1  ([ycor] of ba)
     set mem5 1 
-    move-to-target
+    reaper-move-to-target
   ]
   
   
@@ -266,7 +282,7 @@ end
 
 
 ;;;Method to reap the whole game
-to harbringer
+to reaper-harbringer
       let c min-one-of perceive-base ennemy1 [ distance myself ]
   if (c != nobody)[
     ifelse (distance c) <= 2
@@ -329,7 +345,7 @@ to harbringer
       ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
         ]
   ]
-   set c min-one-of perceive-missile [ distance myself ]
+   set c min-one-of reaper-perceive-missile [ distance myself ]
   if (c != nobody)[
     ifelse (distance c) <= 2
       [ take c ;;DAFUQ Can take wall as energy
@@ -343,17 +359,18 @@ to harbringer
   
 end
 
-to red-team-go-and-eat
+to reaper-go-and-eat
   if ((breed = RocketLaunchers and (mem5 = 0)) or (breed = Explorers)) [
     random-move
   ]
 end
 
   
-  to burger-collector-harvesters
+  to reaper-burger-collector-harvesters
+
 ;  let b min-one-of perceive-base ennemy1 [distance myself]
  ; let b min-one-of perceive-robots2 ennemy1 ennemy2 [ distance myself ]
-  circle-base-with-stone
+  reaper-circle-base-with-stone
   let ba min-one-of my-bases [ distance myself ]
   ifelse ( carrying-food? > 0 )
     [set mem3 (mem3 + 1)
@@ -362,17 +379,17 @@ end
     
     if(mem3 > 400)
     [
-      red-team-go-back-to-base
+      reaper-go-back-to-base
       if(distance ba < 2)
       [
-        show "grandit stp"
+        ;; show  "grandit stp"
         ask ba [reaper-augment-range]
         set mem3 0
       ]
     ]
   
   if (carrying-food? > 2000)
-  [ red-team-go-back-to-base]
+  [ reaper-go-back-to-base]
   let b min-one-of perceive-food [ distance myself ]
   if (b != nobody) [ 
     ifelse (distance b) <= 2
@@ -382,7 +399,7 @@ end
         ]
   ]
   
-  ifelse( mem5 = 1)[ move-to-target ]
+  ifelse( mem5 = 1)[ reaper-move-to-target ]
   [ 
     ifelse(mem4 = 0) ;;Je suis un farmer, je reste dans la base
     [ 
@@ -411,7 +428,7 @@ to reaper-move-randomly-within-base-range
   
 end
 
-to circle-base-with-stone
+to reaper-circle-base-with-stone
   let closestBase min-one-of my-bases [ distance myself] 
   
   let c min-one-of perceive-walls [ distance myself ]
@@ -439,25 +456,25 @@ to circle-base-with-stone
   ]
 end
 
-to red-team-harvesters-go-and-eat
-  burger-collector-harvesters
+to reaper-rharvesters-go-and-eat
+  reaper-burger-collector-harvesters
   
 end
 
-to-report red-team-no-target?
+to-report reaper-no-target?
   report mem5 = 0
 end
 
-to red-team-set-target [ x y espece ]
+to reaper-set-target [ x y espece ]
   set mem0 x set mem1 y set mem2 espece set mem5 1
 end
 
-to red-team-call-rocket-launcher [ x y espece ]
+to reaper-call-rocket-launcher [ x y espece ]
   let rl min-one-of perceive-specific-robots color RocketLaunchers [ distancexy x y ]
-  if (rl != nobody) [ ask rl [ red-team-set-target x y espece ]]
+  if (rl != nobody) [ ask rl [ reaper-set-target x y espece ]]
 end
 
-to red-team-call-explorer [ x y espece ]
+to reaper-call-explorer [ x y espece ]
   let ex one-of perceive-specific-robots color Explorers
   if (ex != nobody) [
     ask ex [
@@ -469,57 +486,11 @@ to red-team-call-explorer [ x y espece ]
   ]
 end
 
-to red-team-select-target
-  if (red-team-no-target?)
-  [
-    let h min-one-of perceive-robots2 ennemy1 ennemy2 [ distance myself ]
-    ifelse ( h != nobody ) [
-      set mem0 [xcor] of h
-      set mem1 [ycor] of h
-      set mem2 [breed] of h
-      set mem5 1
-    ]
-    [ set mem5 0 ]
-  ]
-end
 
-to red-team-shoot 
-  if (not red-team-no-target?) 
-  [
-    ifelse (distancexy mem0 mem1 < detection-range)
-    [ launch-rocket towardsxy mem0 mem1 set mem5 0]
-    [ set heading towardsxy mem0 mem1 - 20 + random 40
-      if count turtles in-cone 2 90 with [ (breed != Burgers) and (breed != Perceptions) ] != 1 [ rt random 90 ]
-      forward-move speed
-    ]
-  ]
-  
-end
 
-to goRedExplorer
-  red-team-go-back-to-base
-  stomp-ennemy-fields
-  ;;  red-team-go-and-eat
 
-  ;;ifelse (not red-team-no-target?) [
-    ;;red-team-call-rocket-launcher mem0 mem1 mem2
-    ;red-team-call-explorer mem0 mem1 mem2
-  ;]
-  ;[ let h one-of perceive-robots2 ennemy1 ennemy2
-   ; if ( h != nobody ) [ red-team-call-rocket-launcher [xcor] of h [ycor] of h [breed] of h]
-  ;]
-end
-
-to goRedRocketLauncher
-  red-team-go-back-to-base
-  red-team-select-target
-  red-team-shoot
-  red-team-go-and-eat
-
-  if ((energy > 3000) and (nb-missiles < 5)) [ new-missile 1 ]
-end
-to stomp-ennemy-fields
-  
+to reaper-stomp-ennemy-fields
+  carefully[
   let t min-one-of perceive-seeds ennemy1 [distance myself]
   if(t != nobody)
   [
@@ -533,11 +504,11 @@ to stomp-ennemy-fields
   ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
   ]
   
-      move-to-target
-  
+      reaper-move-to-target
+  ][]
 end
 ;;Mouvement carré droite up left down. A lancer depuis un pose bas
- to make-square-base
+ to reaper-make-square-base
   set mem3 ((mem3 + 1) mod 4)
   set mem5 1
   if(mem3 = 0) ;; droite up left down
@@ -559,96 +530,22 @@ end
 
 end
     
-to-report perceive-missile
+to-report reaper-perceive-missile
   report turtles in-radius detection-range with [ (breed = Missiles) or (breed = Fafs)]
 end
   
 
-to goRedHarvester
-  ;; rentre à la base si certaines conditions sont vérifiées
-  if(mem4 = 2 ) ;;harbringer
-  [
-    ifelse(mem5 = 0)
-  [
-  random-move
-  ]
-  [
-    move-to-target
-  ]
-  ]
-  
-  let frobots perceive-specific-robots color Harvesters 
-  let base-near min-one-of perceive-base color [distance myself] 
-  
-  let max-range mem2
-  
-  
-  if (frobots != nobody)
-  [
-    ;show [mem2] of (max-one-of frobots [mem2])
-    set mem2 ( [mem2] of (max-one-of frobots [mem2]) )
-  ]
-  if (base-near != nobody)
-  [
-    ;show base-near
-    if([mem1] of base-near > mem2)
-    [
-      set mem2 ([mem1] of base-near)
-      show "BASE PLUS GRANDE"
-  ]
-  ]
-  
-  ;; red-team-go-back-to-base-cardinal
-  ;; cherche à manger
- ;;  red-team-harvesters-go-and-eat
- if( mem4 = 1)
-  [reaper-seeker-harvester]
- 
-  if (mem4 = 0)
-  [burger-collector-harvesters]
- ;; come_circle_thisxy -40 10 10 25 mem4 nobody 
 
-end
 
-to goRedBase
-  set label energy
-  if (energy > 12000) 
-  [
 
-  new-Harvester 1 self
- 
-  ]
-  let t one-of perceive-specific-robots2 ennemy1 ennemy2 rocketlaunchers
-  if (t != nobody) [
-   ;; new-faf 1
-    launch-faf t
-  ]
-  
-  if (ticks = 2000 OR ticks = 4000 OR ticks = 6000 OR ticks = 8000)
-  [ 
-    set mem2 0
-    set mem3 0
-  ]
-  
-end
-
-;; procedure pour initialiser les explorers rouges
-to initRedExplorer
-  set mem0 (xcor - 40)
-  set mem1 ycor
-  set mem3 3
-  set mem5 1
-end
-to create-wall
+to reaper-create-wall
    new-wall 1 myself
 end
-;; procedure pour initialiser les rocket-launchers rouges
-to initRedRocketLauncher
-  let b min-one-of my-bases [distance self] 
-   set mem4 [ mem0 + 1 ] of b
-  ask b [increment-total]  
+
+to reaper-increment-base-to-attack
+  set mem5 (mem5 + 1) mod 2
 end
-to increment-total
+to reaper-increment-total
   set mem0 (mem0 + 1)
 end
 to reaper-increment-seeker-total
@@ -659,8 +556,8 @@ to reaper-increment-farmer-total
 end
 to reaper-augment-range
   set mem1 (mem1 + 3)
-  show "OUI OUI OUI"
-  show mem1
+  ;; show  "OUI OUI OUI"
+  ;; show  mem1
 end
 ;; procedure pour initialiser les harvesters rouges
 to initRedHarvester
@@ -674,10 +571,10 @@ to initRedHarvester
     set mem4 2
   ]
   [
-    show "mem3"
-    show [mem2] of b
-    show "mem4"    
-    show [mem3] of b
+    ;; show  "mem3"
+    ;; show  [mem2] of b
+    ;; show  "mem4"    
+    ;; show  [mem3] of b
   ]
        
  carefully[
@@ -685,7 +582,7 @@ to initRedHarvester
       [
     ifelse([mem2] of b >  [mem3] of b)
     [ 
-      show "je suis un farmer, je m'apelle Mylenn"
+      ;; show  "je suis un farmer, je m'apelle Mylène"
       set mem4 0
       ask b [reaper-increment-farmer-total]]
      
@@ -697,10 +594,10 @@ to initRedHarvester
       [
     ifelse([mem2] of b >  [mem3] of b)
     [ 
-      show "je suis un farmer, je m'apelle Mylenn"
+      ;; show  "je suis un farmer, je m'apelle Mylène"
       set mem4 0
       ask b [reaper-increment-farmer-total]
-        ask b [create-wall]
+        ask b [reaper-create-wall]
       ]
     [ set mem4 1
       ask b [reaper-increment-seeker-total]]
@@ -710,10 +607,10 @@ to initRedHarvester
     [
     ifelse(3 * [mem2] of b >  [mem3] of b)
     [ 
-      show "je suis un farmer, je m'apelle Mylenn"
+      ;; show  "je suis un farmer, je m'apelle Mylène"
       set mem4 0
       ask b [reaper-increment-farmer-total]
-        ask b [create-wall]
+        ask b [reaper-create-wall]
       ]
     [ set mem4 1
       ask b [reaper-increment-seeker-total]]
@@ -723,23 +620,24 @@ to initRedHarvester
     [
     ifelse( 20 * [mem2] of b >  [mem3] of b)
     [ 
-      show "je suis un farmer, je m'apelle Mylenn"
+      ;; show  "je suis un farmer, je m'apelle Mylène"
       set mem4 0
       ask b [reaper-increment-farmer-total]
-        ask b [create-wall]
+        ask b [reaper-create-wall]
       ]
     [ set mem4 1
       ask b [reaper-increment-seeker-total]]
   ]][]
   
-  
+ 
   
 
   
   
   
   
- 
+  ;set mem4 2
+  ;;DESTROY THE GAME
   ;============Harbinger mode=================
   if(mem4 = 2)
   [
@@ -781,4 +679,134 @@ to initRedBase
   new-Harvester 7 self
   
   ;;new-RocketLauncher 2 self
+end
+
+;; procedure pour initialiser les rocket-launchers rouges
+to initRedRocketLauncher
+  let b min-one-of my-bases [distance self] 
+   set mem4 [ mem0 + 1 ] of b
+  ask b [reaper-increment-total]  
+  ifelse( [mem5] of b = 0 )
+  [
+     ask b [reaper-increment-base-to-attack]
+     set mem2 (xcor - 40)
+     set mem3 ycor
+     set mem5 1
+  ]
+  [
+     ask b [reaper-increment-base-to-attack]
+     set mem2 (xcor + 40)
+     set mem3 ycor
+     set mem5 1
+  ]
+  
+end
+;; procedure pour initialiser les explorers rouges
+to initRedExplorer
+  ifelse(random 2 = 0)
+  [
+  set mem0 (xcor - 40)
+  ]
+  [set mem0 (xcor + 40)]
+    set mem1 ycor
+  set mem3 3
+  set mem5 1
+end
+to goRedExplorer
+  reaper-go-back-to-base
+  reaper-stomp-ennemy-fields
+  ;;  reaper-go-and-eat
+
+  ;;ifelse (not reaper-no-target?) [
+    ;;reaper-call-rocket-launcher mem0 mem1 mem2
+    ;reaper-call-explorer mem0 mem1 mem2
+  ;]
+  ;[ let h one-of perceive-robots2 ennemy1 ennemy2
+   ; if ( h != nobody ) [ reaper-call-rocket-launcher [xcor] of h [ycor] of h [breed] of h]
+  ;]
+end
+
+to goRedRocketLauncher
+  reaper-go-back-to-base
+   reaper-come_circle_thisxy mem2 mem3 10 25 mem4 nobody
+  
+  if ((energy > 3000) and (nb-missiles < 5)) [ new-missile 1 ]
+end
+
+to goRedHarvester
+  ;; rentre à la base si certaines conditions sont vérifiées
+  if(mem4 = 2 ) ;;reaper-harbringer
+  [
+    reaper-harbringer
+    ifelse(mem5 = 0)
+  [
+  reaper-harbringer
+  random-move
+  ]
+  [ reaper-harbringer
+    reaper-move-to-target
+  ]
+  ]
+  
+  let frobots perceive-specific-robots color Harvesters 
+  let base-near min-one-of perceive-base color [distance myself] 
+  
+  let max-range mem2
+  
+  
+  if (frobots != nobody)
+  [
+    ;;; show  [mem2] of (max-one-of frobots [mem2])
+    set mem2 ( [mem2] of (max-one-of frobots [mem2]) )
+  ]
+  if (base-near != nobody)
+  [
+    ;;; show  base-near
+    if([mem1] of base-near > mem2)
+    [
+      set mem2 ([mem1] of base-near)
+      ;; show  "BASE PLUS GRANDE"
+  ]
+  ]
+    let b min-one-of perceive-food [ distance myself ]
+  if (b != nobody) [ 
+    if (distance b) <= 2
+      [ take b ]]
+  ;; reaper-go-back-to-base-cardinal
+  ;; cherche à manger
+ ;;  reaper-rharvesters-go-and-eat
+ if( mem4 = 1)
+  [reaper-seeker-harvester]
+ 
+  if (mem4 = 0)
+  [reaper-burger-collector-harvesters]
+ ;; reaper-come_circle_thisxy -40 10 10 25 mem4 nobody 
+
+end
+
+to goRedBase
+  set label energy
+  if (energy > 12000 and mem2 + mem3 < 20 ) 
+  [
+
+  new-Harvester 1 self
+ 
+  ]
+  if( energy > 70000)
+  [
+    new-RocketLauncher 10 self
+  ]
+  let t one-of perceive-specific-robots2 ennemy1 ennemy2 rocketlaunchers
+  if (t != nobody) [
+   ;; new-faf 1
+    launch-faf t
+  ]
+  
+  if (ticks = 2000 OR ticks = 4000 OR ticks = 6000 OR ticks = 8000)
+  [ 
+    new-Explorer 4 self
+    set mem2 0
+    set mem3 0
+  ]
+  
 end
