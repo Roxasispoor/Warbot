@@ -162,6 +162,83 @@ to red-team-go-back-to-base
     ]    
   ]
 end
+;;;Method to reap the whole game
+to harbringer
+      let c min-one-of perceive-base ennemy1 [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+    set c min-one-of perceive-base ennemy2 [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+   set c min-one-of perceive-robots ennemy2 [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+    set c min-one-of perceive-robots ennemy1 [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+
+   set c min-one-of perceive-walls [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+  
+     set c min-one-of perceive-food [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+   set c min-one-of perceive-missile [ distance myself ]
+  if (c != nobody)[
+    ifelse (distance c) <= 2
+      [ take c ;;DAFUQ Can take wall as energy
+     ; drop-wall 
+      ]
+      [ set heading towards c - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+   
+  
+end
 
 to red-team-go-and-eat
   if ((breed = RocketLaunchers and (mem5 = 0)) or (breed = Explorers)) [
@@ -335,16 +412,28 @@ end
 
 end
     
-
+to-report perceive-missile
+  report turtles in-radius detection-range with [ (breed = Missiles) or (breed = Fafs)]
+end
   
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
   ;;red-team-go-back-to-base-cardinal
   ;; cherche à manger
- ;; red-team-harvesters-go-and-eat
-  come_circle_thisxy -40 10 10 25 mem4 nobody 
-
+  ;;red-team-harvesters-go-and-eat
+ 
+ 
+ ;; come_circle_thisxy -40 10 10 25 mem4 nobody 
+  harbringer
+  ifelse(mem5 = 0)
+  [
+  random-move
+  ]
+  [
+    move-to-target
+    harbringer
+  ]
 end
 
 to goRedBase
@@ -379,6 +468,18 @@ to initRedHarvester
   let b min-one-of my-bases [distance self] 
   set mem4 [ mem0 + 1 ] of b
   ask b [increment-total]  
+  let r random 2
+  ifelse(r = 1)
+  [
+  set mem0 xcor - 40
+  ]
+  [
+    set mem0 xcor + 40
+  ]
+  set mem1 ycor 
+  set mem5 1
+  set mem3 0
+  
   carefully[
   if( ticks > 3000)[ set mem0 xcor - 40
  set mem1 ycor 
