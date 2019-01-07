@@ -433,12 +433,6 @@ end
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
-  red-team-go-back-to-base-cardinal
-  ;; cherche à manger
-  red-team-harvesters-go-and-eat
- 
- 
- ;; come_circle_thisxy -40 10 10 25 mem4 nobody 
   if(mem4 = 2 )
   
   ;;harbringer
@@ -452,6 +446,13 @@ to goRedHarvester
     harbringer
   ]
   ]
+  red-team-go-back-to-base-cardinal
+  ;; cherche à manger
+  red-team-harvesters-go-and-eat
+ 
+ 
+ ;; come_circle_thisxy -40 10 10 25 mem4 nobody 
+
 end
 
 to goRedBase
