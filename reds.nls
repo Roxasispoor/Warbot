@@ -5,10 +5,18 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;mem0-1 target direction
-;; mem2 size defense
+;;mem2 size defense
 ;;mem3 stuck?
 ;;mem 4 number
 ;;mem 5 target?
+;;
+;; Harvester :
+;;mem0-1 target direction
+;;mem2 size defense
+;;mem3 stuck?
+;;mem 4 hervester_type : 0 farmer; 1 seeker; 2 harbinger
+;;mem 5 target?
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;base mem0:Total of unity number
 ;;mem1: size of circle crop
@@ -77,7 +85,7 @@ to red-team-go-back-to-base-cardinal
     ifelse (b != nobody and mem3 = 0) [
       ifelse (distance b <= 2)
       [ 
-        if (carrying-food? > 2000) [ give-food b carrying-food? ]
+        if (carrying-food? > 2000) [ give-food b (carrying-food? / 2) ]
         if (energy < 500) [ red-team-ask-for-energy b 500 ]
         if ((Breed = RocketLaunchers) and (nb-missiles = 0)) [
           red-team-ask-for-energy b 500
@@ -162,6 +170,50 @@ to red-team-go-back-to-base
     ]    
   ]
 end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;; ECONOMY ;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Lets plant a seed and harvest a big biggy burger with steak, sald, two portions of cheese and a little gherkin. But just one gherkin.
+to reaper-seeker-harvester
+  circle-base-with-stone
+  let b min-one-of perceive-food [ distance myself ]
+  let ba min-one-of my-bases [ distance myself ]
+  ;; si tu as de la bouffe à côté de toi : eat all burgers
+  ifelse ((b != nobody) and (distance ba > mem2))
+  [
+    ifelse (distance b) <= 2
+      [ take b ]
+      [ set heading towards b - 20 + random 40
+      ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+        ]
+  ]
+  ;; sinon 
+  [
+   
+        ;; si le robot est à moins de 10 de la base
+        if ((distance ba < mem2) ;and ( ycor < [ycor] of ba - 0.5 OR
+          ;ycor > [ycor] of ba + 0.5 ) and ( xcor < [xcor] of ba - 0.5 OR
+          ;xcor > [xcor] of ba + 0.5 )
+          )
+          [ plant-seeds color max-seeds ]
+      ]
+    
+    ;; si non cherche co****** et reviens quand tu auras quelquechose à proposer
+    [ifelse( mem5 = 1)[ move-to-target ][ random-move ]]
+  ]
+end
+
+
+to reaper-seeker-eat-all-burgers
+  let t min-one-of perceive-seeds ennemy1 [distance myself]
+  if(t != nobody)
+  [
+  set heading towards t  - 20 + random 40
+  ifelse (free-ahead? speed = nobody) [ forward-move speed ][ rt random 360 if (free-ahead? 2 = nobody) [ forward-move speed ]]
+  ]
+end
+
+
 ;;;Method to reap the whole game
 to harbringer
       let c min-one-of perceive-base ennemy1 [ distance myself ]
@@ -245,11 +297,9 @@ to red-team-go-and-eat
     random-move
   ]
 end
-;;Try to eat, if doesn't succeeed go to target
-to burger-collector-harvesters
 
   
-  
+  to burger-collector-harvesters
 ;  let b min-one-of perceive-base ennemy1 [distance myself]
  ; let b min-one-of perceive-robots2 ennemy1 ennemy2 [ distance myself ]
   circle-base-with-stone
@@ -433,9 +483,7 @@ end
 
 to goRedHarvester
   ;; rentre à la base si certaines conditions sont vérifiées
-  if(mem4 = 2 )
-  
-  ;;harbringer
+  if(mem4 = 2 ) ;;harbringer
   [
     ifelse(mem5 = 0)
   [
@@ -443,13 +491,13 @@ to goRedHarvester
   ]
   [
     move-to-target
-    harbringer
   ]
   ]
-  red-team-go-back-to-base-cardinal
+  ;; red-team-go-back-to-base-cardinal
   ;; cherche à manger
-  red-team-harvesters-go-and-eat
- 
+ ;;  red-team-harvesters-go-and-eat
+ if( mem4 = 1)
+  [reaper-seeker-harvester]
  
  ;; come_circle_thisxy -40 10 10 25 mem4 nobody 
 
@@ -488,7 +536,7 @@ end
 to initRedHarvester
   set mem2 10;
   let b min-one-of my-bases [distance self] 
-  set mem4 0 ;; TODO MODIFY TO CREATE BREED
+  set mem4 1 ;; TODO MODIFY TO CREATE BREED
   
   ;============Harbinger mode=================
   if(mem4 = 2)
