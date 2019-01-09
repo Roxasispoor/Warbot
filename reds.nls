@@ -13,7 +13,7 @@
 ;; Harvester :
 ;;mem0-1 target direction
 ;;mem2 size defense
-;;mem3 stuck?     // if mem4 = 1 ou 0 : timer
+;;mem3 if mem4 = 1 ou 0 : timer
 ;;mem 4 hervester_type : 0 farmer; 1 seeker; 2 harbinger
 ;;mem 5 target?
 ;;
@@ -32,6 +32,9 @@
 ;ROCKET LAUNCHER
 ;;mem2 baseX
 ;;mem 3  base y
+
+
+;Entoure un point et tourne autour
 to reaper-come_circle_this [ t radius numberTotal currentTotal general ]
   ;Si on est pas en train de faire quelque chose
   if ( mem5 = 0 and breed = 2 )
@@ -46,11 +49,9 @@ to reaper-come_circle_this [ t radius numberTotal currentTotal general ]
   ]
  
 end
+;;Entoure un point et tourne autour
 to reaper-come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general ]
-  ;Si on est pas en train de faire quelque chose
-  ;;if ( mem5 = 0);; and breed = 2 )
-  ;;[
-   ; ;; show  radius
+  
     let posX ( radius * cos(360 * (currentTotal / numberTotal) + 360 * ((ticks mod 500) / 500) ) + aimX )
     let posY ( radius * sin(360 * (currentTotal / numberTotal) + 360 * ((ticks mod 500) / 500) ) + aimY )
     ;;; show  posX
@@ -63,6 +64,7 @@ to reaper-come_circle_thisxy [ aimX aimY radius numberTotal currentTotal general
   ;;]
  
 end
+;Move to target once, don't stay on arrival
 to reaper-move-to-target  
   if (distancexy mem0 mem1 < 1 )
   [
@@ -73,6 +75,7 @@ set heading towardsxy mem0 mem1
         
         
 end
+;Move to target and stay on target
 to reaper-move-to-target-and-stay
 
   set heading towardsxy mem0 mem1
@@ -90,6 +93,8 @@ end
 to reaper-ask-for-energy [ b n ]
   ask b [ if (energy > 6000) [ give-energy myself n ]]
 end
+;;Come back through an axis of one base, to avoid walking on crop
+;; Move to closest axis then directly toward base. Can cause traffic jam
 to reaper-go-back-to-base-cardinal
  
   if ( carrying-food? > 2000 or energy < 500 )
@@ -156,7 +161,7 @@ to reaper-go-back-to-base-cardinal
   ]
 
 end
-
+;Go back to base give food get energy
 to reaper-go-back-to-base
   if (carrying-food? > 2000 or (energy < 500))
   [
@@ -359,17 +364,9 @@ to reaper-harbringer
   
 end
 
-to reaper-go-and-eat
-  if ((breed = RocketLaunchers and (mem5 = 0)) or (breed = Explorers)) [
-    random-move
-  ]
-end
-
-  
+  ;;Method used by farmers harvesters
+;Stay in base radius get food try to plant it. If it takes too long ask base radius to get bigger
   to reaper-burger-collector-harvesters
-
-;  let b min-one-of perceive-base ennemy1 [distance myself]
- ; let b min-one-of perceive-robots2 ennemy1 ennemy2 [ distance myself ]
   reaper-circle-base-with-stone
   let ba min-one-of my-bases [ distance myself ]
   ifelse ( carrying-food? > 0 )
@@ -427,7 +424,7 @@ to reaper-move-randomly-within-base-range
       ]
   
 end
-
+;;Take stones and drop them if you're close to radius of base
 to reaper-circle-base-with-stone
   let closestBase min-one-of my-bases [ distance myself] 
   
@@ -486,9 +483,7 @@ to reaper-call-explorer [ x y espece ]
   ]
 end
 
-
-
-
+;;Walk on all ennemy food perceivable to prevent them from growing
 to reaper-stomp-ennemy-fields
   carefully[
   let t min-one-of perceive-seeds ennemy1 [distance myself]
@@ -560,6 +555,7 @@ to reaper-augment-range
   ;; show  mem1
 end
 ;; procedure pour initialiser les harvesters rouges
+;;Dans différents âges on essaie de garder des proportions seeker/farmer différents
 to initRedHarvester
   set mem2 10;
   let b min-one-of my-bases [distance self] 
@@ -682,6 +678,7 @@ to initRedBase
 end
 
 ;; procedure pour initialiser les rocket-launchers rouges
+;;Va a une base ennemie au hasard, après avoir récupéré son numéro
 to initRedRocketLauncher
   let b min-one-of my-bases [distance self] 
    set mem4 [ mem0 + 1 ] of b
@@ -715,7 +712,6 @@ end
 to goRedExplorer
   reaper-go-back-to-base
   reaper-stomp-ennemy-fields
-  ;;  reaper-go-and-eat
 
   ;;ifelse (not reaper-no-target?) [
     ;;reaper-call-rocket-launcher mem0 mem1 mem2
@@ -747,7 +743,7 @@ to goRedHarvester
     reaper-move-to-target
   ]
   ]
-  
+  ;;Transmission de la taille de la base
   let frobots perceive-specific-robots color Harvesters 
   let base-near min-one-of perceive-base color [distance myself] 
   
@@ -783,7 +779,9 @@ to goRedHarvester
  ;; reaper-come_circle_thisxy -40 10 10 25 mem4 nobody 
 
 end
-
+;;Essaie de spawn 20 harvesters max a chaque age pour empecher les bouchons
+;;puis économise pour acheter des armées
+;;Au changement d'age, rajoute des stompers
 to goRedBase
   set label energy
   if (energy > 12000 and mem2 + mem3 < 20 ) 
